@@ -1,5 +1,4 @@
-release:
-    stage: release
+build-and-release:
     image: docker:git
     services:
         - docker:dind
