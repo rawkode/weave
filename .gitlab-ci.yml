@@ -1,0 +1,13 @@
+release:
+    stage: release
+    image: docker:git
+    services:
+        - docker:dind
+    variables:
+        CONTAINER_IMAGE: registry.gitlab.com/rawkode/weave
+    script:
+        - docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN registry.gitlab.com
+        - docker build -t registry.gitlab.com/rawkode/weave .
+        - docker push registry.gitlab.com/rawkode/weave
+    only:
+        - master
