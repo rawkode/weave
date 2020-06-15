@@ -9,4 +9,4 @@ build-and-release:
         - docker build -t registry.gitlab.com/rawkode/weave .
         - docker push registry.gitlab.com/rawkode/weave
     only:
-        - master
+        - latest
