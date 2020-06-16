@@ -1,0 +1,5 @@
+image: alpine:3.9
+
+hello-world:
+    script:
+        - echo Hello, world!
