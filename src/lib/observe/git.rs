@@ -81,11 +81,46 @@ pub fn detect(directory: &str) -> Result<HashSet<PathBuf>, Error> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::fs::{create_dir, File};
+    use std::path::Path;
     use tempfile::TempDir;
 
-    #[test]
-    fn test_directory_isnt_repository() {
-        assert_eq!(verify("/tmp").is_err(), true)
+    macro_rules! t {
+        ($e:expr) => {
+            match $e {
+                Ok(e) => e,
+                Err(e) => panic!("{} failed with {}", stringify!($e), e),
+            }
+        };
+    }
+
+    fn repo_init() -> (TempDir, Repository) {
+        let td = TempDir::new().unwrap();
+        let repo = Repository::init(td.path()).unwrap();
+
+        let mut index = t!(repo.index());
+        let sig = t!(repo.signature());
+
+        let mut config = t!(repo.config());
+        t!(config.set_str("user.name", "Daniel Jackson"));
+        t!(config.set_str("user.email", "daniel.jackson@sg1"));
+
+        // This is our initial commit. It addds 1 file within 1 directory
+        // This directory shouldn't show up during change analysis of
+        // subsequent test commits
+        {
+            t!(create_dir(&td.path().join("first")));
+
+            t!(File::create(&td.path().join("first/file")));
+            t!(index.add_path(Path::new("first/file")));
+
+            let id = t!(index.write_tree());
+            let tree = t!(repo.find_tree(id));
+
+            t!(repo.commit(Some("HEAD"), &sig, &sig, "commit", &tree, &[]));
+        }
+
+        (td, repo)
     }
 
     #[test]
@@ -106,24 +141,43 @@ mod tests {
         assert_eq!(verify(path.to_str().unwrap()).is_err(), true)
     }
 
-    // #[test]
-    // fn test_is_can_verify_git_repository() {
-    //     let td = TempDir::new().unwrap();
-    //     let path = td.path();
-    //     let repo = Repository::init(td.path()).unwrap();
+    #[test]
+    fn test_is_can_verify_git_repository() {
+        let (td, _repo) = repo_init();
 
-    //     let mut tmpfile: File = tempfile::tempfile().unwrap();
-    //     write!(tmpfile, "Initial File!").unwrap();
+        assert_eq!(verify(td.path().to_str().unwrap()).is_err(), false)
+    }
 
-    //     let mut index = repo.index().unwrap();
-    //     let tree_id = {
-    //         index.add_path(tmpfile);
-    //         index.write_tree().unwrap();
-    //     };
+    #[test]
+    fn test_can_discover_modified_directories() {
+        let (td, repo) = repo_init();
 
-    //     let tree = repo.find_tree(tree_id)?;
-    //     repo.commit(Some("HEAD"), &sig, &sig, "Initial commit", &tree, &[])?;
+        let mut index = t!(repo.index());
+        let sig = t!(repo.signature());
 
-    //     assert_eq!(verify(".").is_ok(), true)
-    // }
+        let mut modpaths: HashSet<PathBuf> = HashSet::new();
+        modpaths.insert(PathBuf::from("second"));
+        modpaths.insert(PathBuf::from("third"));
+
+        // Add 2 directories, each with a file
+        {
+            for path in modpaths.iter() {
+                t!(create_dir(&td.path().join(path)));
+                t!(File::create(&td.path().join(path).join("file")));
+                t!(index.add_path(&path.join("file")));
+            }
+
+            let id = t!(index.write_tree());
+            let tree = t!(repo.find_tree(id));
+
+            let head_id = t!(repo.refname_to_id("HEAD"));
+            let parent = t!(repo.find_commit(head_id));
+
+            t!(repo.commit(Some("HEAD"), &sig, &sig, "commit", &tree, &[&parent]));
+        }
+
+        let changedirs = t!(detect(td.path().to_str().unwrap()));
+
+        assert_eq!(changedirs, modpaths);
+    }
 }
