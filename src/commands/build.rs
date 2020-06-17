@@ -1,6 +1,7 @@
 use clap::Clap;
 
-use crate::lib::observe::git::detect::detect;
+use crate::lib::detect::detect_build_roots;
+use crate::lib::observe::git::detect;
 
 /// Detect changes and trigger build instructions
 #[derive(Clap)]
@@ -17,11 +18,6 @@ pub fn build(args: Build) {
         Err(_e) => return,
     };
 
-    for path in paths {
-        println!("We need to build {}", path.to_str().unwrap())
-    }
-
     //
-
-    return;
+    detect_build_roots(paths);
 }
