@@ -129,7 +129,7 @@ mod tests {
         let path = td.path();
         Repository::init_bare(td.path()).unwrap();
 
-        assert_eq!(verify(path.to_str().unwrap()).is_err(), true)
+        assert_eq!(verify(path.to_path_buf()).is_err(), true)
     }
 
     #[test]
@@ -138,14 +138,14 @@ mod tests {
         let path = td.path();
         Repository::init(td.path()).unwrap();
 
-        assert_eq!(verify(path.to_str().unwrap()).is_err(), true)
+        assert_eq!(verify(path.to_path_buf()).is_err(), true)
     }
 
     #[test]
     fn test_is_can_verify_git_repository() {
         let (td, _repo) = repo_init();
 
-        assert_eq!(verify(td.path().to_str().unwrap()).is_err(), false)
+        assert_eq!(verify(td.path().to_path_buf()).is_err(), false)
     }
 
     #[test]
@@ -176,7 +176,7 @@ mod tests {
             t!(repo.commit(Some("HEAD"), &sig, &sig, "commit", &tree, &[&parent]));
         }
 
-        let changedirs = t!(detect(td.path().to_str().unwrap()));
+        let changedirs = t!(detect(td.path().to_path_buf()));
 
         assert_eq!(changedirs, modpaths);
     }
