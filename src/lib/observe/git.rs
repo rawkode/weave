@@ -6,7 +6,7 @@ use std::{collections::HashSet, path::PathBuf};
 /// attempting to open it. Will return an Error for bare
 /// and empty repositories.
 ///
-pub fn verify(directory: &str) -> Result<Repository, Error> {
+pub fn verify(directory: PathBuf) -> Result<Repository, Error> {
     let repository = match Repository::open(directory) {
         Err(e) => return Err(e),
         Ok(r) => r,
@@ -32,7 +32,7 @@ pub fn verify(directory: &str) -> Result<Repository, Error> {
 /// Detects changes in the Git repository by walking back
 /// to the previous commit.
 ///
-pub fn detect(directory: &str) -> Result<HashSet<PathBuf>, Error> {
+pub fn detect(directory: PathBuf) -> Result<HashSet<PathBuf>, Error> {
     let repo = match verify(directory) {
         Ok(r) => r,
         Err(e) => return Err(e),

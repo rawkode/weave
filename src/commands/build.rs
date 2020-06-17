@@ -1,4 +1,5 @@
 use clap::Clap;
+use std::path::PathBuf;
 
 use crate::lib::detect::detect_build_roots;
 use crate::lib::observe::git::detect;
@@ -13,7 +14,9 @@ pub struct Build {
 
 // Option<Result<Oid, Error>>
 pub fn build(args: Build) {
-    let paths = match detect(args.directory.as_str()) {
+    let directory = PathBuf::from(args.directory.as_str());
+
+    let paths = match detect(directory) {
         Ok(f) => f,
         Err(_e) => return,
     };
