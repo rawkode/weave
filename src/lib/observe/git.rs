@@ -1,5 +1,8 @@
 use git2::{Error, Repository};
-use std::{collections::HashSet, path::PathBuf};
+use std::{
+    collections::HashSet,
+    path::{Path, PathBuf},
+};
 
 ///
 /// Verifies if the directory is a valid Git repository by
@@ -72,6 +75,7 @@ pub fn detect(directory: &PathBuf) -> Result<HashSet<PathBuf>, Error> {
 
     for d in ds {
         let dir = d.new_file().path().unwrap().parent().unwrap().to_path_buf();
+        // dirs.insert(directory.join(dir));
         dirs.insert(dir);
     }
 

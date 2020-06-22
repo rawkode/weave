@@ -1,16 +1,32 @@
 use std::{collections::HashSet, path::PathBuf};
 
+use crate::lib::build_tools::docker::default as DockerDefault;
+use crate::lib::build_tools::gitlab::default as GitLabDefault;
+use crate::lib::build_tools::{BuildConfig, BuildTool};
+
 /// This function will walk up the directory tree, to the path
 /// the binary was run from; looking for any kind of build file.
 /// Maybe this should walk until it finds a Git root, but I am
 /// keen to avoid tying this to Git; even though it's the first,
 /// and potentially only, integration.
-pub fn detect_build_roots(changed_dirs: &HashSet<PathBuf>) -> HashSet<PathBuf> {
-    let mut build_roots: HashSet<PathBuf> = HashSet::new();
+pub fn detect_build_roots(
+    root: &PathBuf,
+    changed_dirs: &HashSet<PathBuf>,
+) -> HashSet<Box<dyn BuildTool>> {
+    let mut build_roots: HashSet<Box<dyn BuildTool>> = HashSet::new();
 
     for dir in changed_dirs {
-        log::info!("Walking from {} to {}, looking for a build root ...", dir.to_str().unwrap(), PathBuf::from(".").to_str().unwrap());
-        build_roots.insert(walk_to_build_root(dir));
+        log::info!(
+            "Walking from {} to {}, looking for a build root ...",
+            dir.to_str().unwrap(),
+            root.to_str().unwrap(),
+        );
+        match walk_to_build_root(root, &dir) {
+            Some(build_tool) => {
+                build_roots.insert(build_tool);
+            }
+            None => {}
+        }
     }
 
     return build_roots;
@@ -21,16 +37,42 @@ pub fn detect_build_roots(changed_dirs: &HashSet<PathBuf>) -> HashSet<PathBuf> {
 /// the changed_dir and the root directory, looking for
 /// build files
 ///
-/// If it cannot find any, it will return the root directory
-///
-fn walk_to_build_root(changed_dir: &PathBuf) -> PathBuf {
-    log::info!("Checking ./{} for a build file", changed_dir.to_str().unwrap());
+fn walk_to_build_root(root: &PathBuf, changed_dir: &PathBuf) -> Option<Box<dyn BuildTool>> {
+    log::info!(
+        "Checking {}/{} for a build file",
+        root.to_str().unwrap(),
+        changed_dir.to_str().unwrap()
+    );
+
+    let build_config = BuildConfig {
+        directory: root.join(changed_dir.to_path_buf()),
+        dependencies: Vec::new(),
+    };
+
+    // Check if it's a Docker root
+    if DockerDefault(&build_config).detect() {
+        log::info!(
+            "Found a Dockerfile inside directory {}",
+            build_config.directory.to_str().unwrap()
+        );
+    }
+
+    // Check if it's a GitLab root
+    if GitLabDefault(&build_config).detect() {
+        log::info!(
+            "Found a GitLab CI YAML inside directory {}",
+            build_config.directory.to_str().unwrap()
+        );
+    }
+
+    if root.eq(changed_dir) {
+        return None;
+    }
 
     let mut dir = changed_dir.to_owned();
 
     return match dir.pop() {
-        true => walk_to_build_root(&dir),
-        false => dir,
+        true => walk_to_build_root(root, &dir),
+        false => None,
     };
 }
-
