@@ -16,11 +16,15 @@ pub struct Build {
 pub fn build(args: Build) {
     let directory = PathBuf::from(args.directory.as_str());
 
-    let paths = match detect(directory) {
+    let paths = match detect(&directory) {
         Ok(f) => f,
         Err(_e) => return,
     };
 
     //
-    detect_build_roots(paths);
+    let build_roots = detect_build_roots(&paths);
+
+    for dir in build_roots {
+        log::info!("Building {}", dir.to_str().unwrap());
+    }
 }

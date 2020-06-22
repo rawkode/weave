@@ -6,7 +6,7 @@ use std::{collections::HashSet, path::PathBuf};
 /// attempting to open it. Will return an Error for bare
 /// and empty repositories.
 ///
-pub fn verify(directory: PathBuf) -> Result<Repository, Error> {
+pub fn verify(directory: &PathBuf) -> Result<Repository, Error> {
     let repository = match Repository::open(directory) {
         Err(e) => return Err(e),
         Ok(r) => r,
@@ -32,7 +32,7 @@ pub fn verify(directory: PathBuf) -> Result<Repository, Error> {
 /// Detects changes in the Git repository by walking back
 /// to the previous commit.
 ///
-pub fn detect(directory: PathBuf) -> Result<HashSet<PathBuf>, Error> {
+pub fn detect(directory: &PathBuf) -> Result<HashSet<PathBuf>, Error> {
     let repo = match verify(directory) {
         Ok(r) => r,
         Err(e) => return Err(e),
@@ -129,7 +129,7 @@ mod tests {
         let path = td.path();
         Repository::init_bare(td.path()).unwrap();
 
-        assert_eq!(verify(path.to_path_buf()).is_err(), true)
+        assert_eq!(verify(&path.to_path_buf()).is_err(), true)
     }
 
     #[test]
@@ -138,14 +138,14 @@ mod tests {
         let path = td.path();
         Repository::init(td.path()).unwrap();
 
-        assert_eq!(verify(path.to_path_buf()).is_err(), true)
+        assert_eq!(verify(&path.to_path_buf()).is_err(), true)
     }
 
     #[test]
     fn test_is_can_verify_git_repository() {
         let (td, _repo) = repo_init();
 
-        assert_eq!(verify(td.path().to_path_buf()).is_err(), false)
+        assert_eq!(verify(&td.path().to_path_buf()).is_err(), false)
     }
 
     #[test]
@@ -176,7 +176,7 @@ mod tests {
             t!(repo.commit(Some("HEAD"), &sig, &sig, "commit", &tree, &[&parent]));
         }
 
-        let changedirs = t!(detect(td.path().to_path_buf()));
+        let changedirs = t!(detect(&td.path().to_path_buf()));
 
         assert_eq!(changedirs, modpaths);
     }
