@@ -23,3 +23,7 @@ Build will return a build plan, through a DAG, of the steps needed to build the 
 ### Execute
 
 Maybe we'll add execution
+
+## Icon
+
+Spiderweb icon by [icons8](https://icons8.com/icons/set/spiderweb)
