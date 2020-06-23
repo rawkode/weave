@@ -18,7 +18,12 @@ impl Observer for AllConfig {
             match entry {
                 Ok(e) => match e.path().is_dir() {
                     true => {
-                        obs.insert(e.path().to_path_buf());
+                        obs.insert(
+                            e.path()
+                                .strip_prefix(self.directory.as_path())
+                                .unwrap()
+                                .to_path_buf(),
+                        );
                     }
                     false => (),
                 },
@@ -47,11 +52,11 @@ mod tests {
 
         let mut expected: HashSet<PathBuf> = HashSet::new();
 
-        expected.insert(PathBuf::from("./examples"));
-        expected.insert(PathBuf::from("./examples/dockerfile"));
-        expected.insert(PathBuf::from("./examples/gitlab-ci"));
-        expected.insert(PathBuf::from("./examples/makefile"));
+        expected.insert(PathBuf::from(""));
+        expected.insert(PathBuf::from("dockerfile"));
+        expected.insert(PathBuf::from("gitlab-ci"));
+        expected.insert(PathBuf::from("makefile"));
 
-        assert_eq!(expected.eq(&actual), true);
+        assert_eq!(expected, actual);
     }
 }
