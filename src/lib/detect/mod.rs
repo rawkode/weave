@@ -2,18 +2,15 @@ use std::{collections::HashSet, path::PathBuf};
 
 use crate::lib::build_tools::docker::default as DockerDefault;
 use crate::lib::build_tools::gitlab::default as GitLabDefault;
-use crate::lib::build_tools::{BuildConfig, BuildTool};
+use crate::lib::build_tools::{BuildConfig, BuildTool, BuildTools};
 
 /// This function will walk up the directory tree, to the path
 /// the binary was run from; looking for any kind of build file.
 /// Maybe this should walk until it finds a Git root, but I am
 /// keen to avoid tying this to Git; even though it's the first,
 /// and potentially only, integration.
-pub fn detect_build_roots(
-    root: &PathBuf,
-    changed_dirs: &HashSet<PathBuf>,
-) -> HashSet<Box<dyn BuildTool>> {
-    let mut build_roots: HashSet<Box<dyn BuildTool>> = HashSet::new();
+pub fn detect_build_roots(root: &PathBuf, changed_dirs: &HashSet<PathBuf>) -> HashSet<BuildTools> {
+    let mut build_roots: HashSet<BuildTools> = HashSet::new();
 
     for dir in changed_dirs {
         log::info!(
@@ -37,7 +34,7 @@ pub fn detect_build_roots(
 /// the changed_dir and the root directory, looking for
 /// build files
 ///
-fn walk_to_build_root(root: &PathBuf, changed_dir: &PathBuf) -> Option<Box<dyn BuildTool>> {
+fn walk_to_build_root(root: &PathBuf, changed_dir: &PathBuf) -> Option<BuildTools> {
     log::info!(
         "Checking {}/{} for a build file",
         root.to_str().unwrap(),
@@ -75,4 +72,23 @@ fn walk_to_build_root(root: &PathBuf, changed_dir: &PathBuf) -> Option<Box<dyn B
         true => walk_to_build_root(root, &dir),
         false => None,
     };
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_is_can_find_all_build_roots() {
+        let mut changed_dirs: HashSet<PathBuf> = HashSet::new();
+        changed_dirs.insert(PathBuf::from("./examples/dockerfile"));
+        changed_dirs.insert(PathBuf::from("./examples/gitlab-ci"));
+        changed_dirs.insert(PathBuf::from("./examples/makefile"));
+
+        let actual = detect_build_roots(&PathBuf::from("./examples"), &changed_dirs);
+
+        let expected: HashSet<BuildTools> = HashSet::new();
+
+        assert_eq!(actual, expected);
+    }
 }

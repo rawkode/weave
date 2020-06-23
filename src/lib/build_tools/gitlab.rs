@@ -1,5 +1,10 @@
-use super::{BuildConfig, BuildTool};
+use super::{BuildConfig, BuildTool, BuildTools};
+use std::{
+    fmt::Debug,
+    hash::{Hash, Hasher},
+};
 
+#[derive(Eq)]
 pub struct GitLabBuild {
     config: BuildConfig,
 }
@@ -30,5 +35,34 @@ impl BuildTool for GitLabBuild {
 
     fn build(&self) -> bool {
         return true;
+    }
+}
+
+impl From<GitLabBuild> for BuildTools {
+    fn from(v: GitLabBuild) -> Self {
+        BuildTools::GitLab(v)
+    }
+}
+
+impl Hash for GitLabBuild {
+    fn hash<H>(&self, state: &mut H)
+    where
+        H: Hasher,
+    {
+        self.id().hash(state)
+    }
+}
+
+impl PartialEq for GitLabBuild {
+    fn eq(&self, other: &GitLabBuild) -> bool {
+        return self.id() == other.id();
+    }
+}
+
+impl Debug for GitLabBuild {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("GitLabBuild")
+            .field("config.directory", &self.config.directory)
+            .finish()
     }
 }
