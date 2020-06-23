@@ -22,7 +22,7 @@ pub fn build(args: Build) {
     };
 
     //
-    let build_roots = detect_build_roots(&directory, &paths);
+    let _build_roots = detect_build_roots(&directory, &paths);
 
     // for dir in build_roots {
     //     log::info!("Building {}", dir.to_str().unwrap());

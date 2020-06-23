@@ -1,5 +1,4 @@
 use super::{BuildConfig, BuildTool};
-use std::hash::{Hash, Hasher};
 
 pub struct DockerBuild {
     config: BuildConfig,

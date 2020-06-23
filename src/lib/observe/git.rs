@@ -1,8 +1,5 @@
 use git2::{Error, Repository};
-use std::{
-    collections::HashSet,
-    path::{Path, PathBuf},
-};
+use std::{collections::HashSet, path::PathBuf};
 
 ///
 /// Verifies if the directory is a valid Git repository by
