@@ -72,7 +72,6 @@ pub fn detect(directory: &PathBuf) -> Result<HashSet<PathBuf>, Error> {
 
     for d in ds {
         let dir = d.new_file().path().unwrap().parent().unwrap().to_path_buf();
-        // dirs.insert(directory.join(dir));
         dirs.insert(dir);
     }
 

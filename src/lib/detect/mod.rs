@@ -47,19 +47,26 @@ fn walk_to_build_root(root: &PathBuf, changed_dir: &PathBuf) -> Option<BuildTool
     };
 
     // Check if it's a Docker root
-    if DockerDefault(&build_config).detect() {
+    let docker_build = DockerDefault(&build_config);
+    if docker_build.detect() {
         log::info!(
             "Found a Dockerfile inside directory {}",
             build_config.directory.to_str().unwrap()
         );
+
+        return Some(BuildTools::from(docker_build));
     }
 
     // Check if it's a GitLab root
-    if GitLabDefault(&build_config).detect() {
+    let gitlab_build = GitLabDefault(&build_config);
+
+    if gitlab_build.detect() {
         log::info!(
             "Found a GitLab CI YAML inside directory {}",
             build_config.directory.to_str().unwrap()
         );
+
+        return Some(BuildTools::from(gitlab_build));
     }
 
     if root.eq(changed_dir) {

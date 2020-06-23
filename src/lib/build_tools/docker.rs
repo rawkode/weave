@@ -6,8 +6,8 @@ use std::{
 
 #[derive(Eq)]
 pub struct DockerBuild {
-    config: BuildConfig,
-    dockerfile: String,
+    pub config: BuildConfig,
+    pub dockerfile: String,
 }
 
 pub fn default(config: &BuildConfig) -> DockerBuild {

@@ -6,7 +6,7 @@ use std::{
 
 #[derive(Eq)]
 pub struct GitLabBuild {
-    config: BuildConfig,
+    pub config: BuildConfig,
 }
 
 pub fn default(config: &BuildConfig) -> GitLabBuild {

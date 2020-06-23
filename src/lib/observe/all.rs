@@ -3,7 +3,7 @@ use std::{collections::HashSet, path::PathBuf};
 use walkdir::WalkDir;
 
 pub struct AllConfig {
-    directory: PathBuf,
+    pub directory: PathBuf,
 }
 
 impl Observer for AllConfig {
@@ -18,7 +18,6 @@ impl Observer for AllConfig {
             match entry {
                 Ok(e) => match e.path().is_dir() {
                     true => {
-                        println!("{}", e.path().display());
                         obs.insert(e.path().to_path_buf());
                     }
                     false => (),

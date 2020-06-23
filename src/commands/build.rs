@@ -2,7 +2,12 @@ use clap::Clap;
 use std::path::PathBuf;
 
 use crate::lib::detect::detect_build_roots;
+
+use crate::lib::build_tools::BuildTools;
+
+use crate::lib::observe::all::AllConfig;
 use crate::lib::observe::git::detect;
+use crate::lib::observe::Observer;
 
 /// Detect changes and trigger build instructions
 #[derive(Clap)]
@@ -10,21 +15,49 @@ pub struct Build {
     /// The directory to scan for changes to build
     #[clap(short = "d", long = "directory", default_value = ".")]
     directory: String,
+
+    /// Modes
+    #[clap(short = "m", long = "mode", default_value = "ci", possible_values=&["all", "ci"])]
+    mode: String,
 }
 
-// Option<Result<Oid, Error>>
 pub fn build(args: Build) {
     let directory = PathBuf::from(args.directory.as_str());
+    let mode = args.mode.as_str();
 
-    let paths = match detect(&directory) {
-        Ok(f) => f,
-        Err(_e) => return,
+    let paths = match mode {
+        "all" => {
+            let all_config = AllConfig {
+                directory: directory.clone(),
+            };
+
+            all_config.observe()
+        }
+        "ci" => match detect(&directory) {
+            Ok(f) => f,
+            Err(_e) => return,
+        },
+        _ => return,
     };
 
     //
-    let _build_roots = detect_build_roots(&directory, &paths);
+    let build_roots = detect_build_roots(&directory, &paths);
 
-    // for dir in build_roots {
-    //     log::info!("Building {}", dir.to_str().unwrap());
-    // }
+    for build_root in build_roots {
+        match build_root {
+            BuildTools::Docker(docker) => {
+                println!(
+                    "Found a Docker build, with Dockerfile {}, inside {}",
+                    docker.dockerfile,
+                    docker.config.directory.to_str().unwrap(),
+                );
+            }
+            BuildTools::GitLab(gitlab) => {
+                println!(
+                    "Found a GitLab build inside {}",
+                    gitlab.config.directory.to_str().unwrap()
+                );
+            }
+        }
+    }
 }
