@@ -34,6 +34,9 @@ impl BuildTool for GitLabBuild {
     }
 
     fn build(&self) -> bool {
+        println!(
+            "This can only be built using GitLab CI, and currently I can't output it's config\n\n"
+        );
         return true;
     }
 }

@@ -3,7 +3,7 @@ use std::path::PathBuf;
 
 use crate::lib::detect::detect_build_roots;
 
-use crate::lib::build_tools::BuildTools;
+use crate::lib::build_tools::{BuildTool, BuildTools};
 
 use crate::lib::observe::all::AllConfig;
 use crate::lib::observe::git::detect;
@@ -44,19 +44,30 @@ pub fn build(args: Build) {
     let build_roots = detect_build_roots(&directory, &paths);
 
     for build_root in build_roots {
+        println!("\n");
+
         match build_root {
             BuildTools::Docker(docker) => {
                 println!(
-                    "Found a Docker build, with Dockerfile {}, inside {}",
+                    "Found a Docker build, with Dockerfile {}, inside {}\n",
                     docker.dockerfile,
                     docker.config.directory.to_str().unwrap(),
                 );
+
+                match docker.build() {
+                    true => println!("Build Successfully"),
+                    false => println!("Build Failed"),
+                }
             }
             BuildTools::GitLab(gitlab) => {
                 println!(
-                    "Found a GitLab build inside {}",
+                    "Found a GitLab build inside {}\n",
                     gitlab.config.directory.to_str().unwrap()
                 );
+                match gitlab.build() {
+                    true => println!("Build Successfully"),
+                    false => println!("Build Failed"),
+                }
             }
         }
     }

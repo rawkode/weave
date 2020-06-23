@@ -1,7 +1,11 @@
 use super::{BuildConfig, BuildTool, BuildTools};
+use std::process::Command;
 use std::{
     fmt::Debug,
     hash::{Hash, Hasher},
+    io,
+    io::Write,
+    path::PathBuf,
 };
 
 #[derive(Eq)]
@@ -41,6 +45,28 @@ impl BuildTool for DockerBuild {
     }
 
     fn build(&self) -> bool {
+        // This won't work on Windows
+        // TODO: Allow `docker` to be buildah, etc.
+        let output = Command::new("docker")
+            .arg("image")
+            .arg("build")
+            .arg("-f")
+            .arg(PathBuf::from(&self.config.directory).join(&self.dockerfile))
+            .arg("-t")
+            .arg("weave_build")
+            .arg(self.config.directory.to_str().unwrap())
+            .output()
+            .expect("failed to execute process");
+
+        if !output.status.success() {
+            log::error!("Failed to execute Docker build\n\n\n");
+            io::stderr().write_all(&output.stderr).unwrap();
+
+            return false;
+        }
+
+        println!("Build Complete, created image weave_build");
+
         return true;
     }
 }
