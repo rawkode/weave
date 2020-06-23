@@ -9,28 +9,27 @@ pub struct GitLabBuild {
     pub config: BuildConfig,
 }
 
-pub fn default(config: &BuildConfig) -> GitLabBuild {
-    return GitLabBuild {
-        config: config.clone(),
-    };
+///
+/// Detect if the directory has a .gitlab-ci.yml
+///
+pub fn detect(config: &BuildConfig) -> Option<BuildTools> {
+    log::debug!(
+        "Checking for '{}'",
+        config.directory.join(".gitlab-ci.yml").to_str().unwrap()
+    );
+
+    if config.directory.join(".gitlab-ci.yml").exists() {
+        return Some(BuildTools::from(GitLabBuild {
+            config: config.clone(),
+        }));
+    }
+
+    return None;
 }
 
 impl BuildTool for GitLabBuild {
     fn id(&self) -> String {
         return String::from(self.config.directory.to_str().unwrap());
-    }
-
-    fn detect(&self) -> bool {
-        // Check if PathBuf has a file called .gitlab-ci.yml
-        log::info!(
-            "Checking for gitlab-ci.yml inside {}",
-            self.config.directory.to_str().unwrap()
-        );
-        if self.config.directory.join(".gitlab-ci.yml").exists() {
-            return true;
-        }
-
-        return false;
     }
 
     fn build(&self) -> bool {

@@ -1,12 +1,15 @@
+use docker::{detect as detect_docker, DockerBuild};
+use gitlab::{detect as detect_gitlab, GitLabBuild};
 use std::cmp::Eq;
 use std::hash::Hash;
 use std::{fmt::Debug, path::PathBuf};
 
-use docker::DockerBuild;
-use gitlab::GitLabBuild;
-
 pub mod docker;
 pub mod gitlab;
+
+// This order is important, this is the order they'll stop matching
+pub const DEFAULT_BUILD_TOOLS: [fn(&BuildConfig) -> Option<BuildTools>; 2] =
+    [detect_gitlab, detect_docker];
 
 #[derive(Clone, Eq, Hash)]
 pub struct BuildConfig {
@@ -22,7 +25,6 @@ impl PartialEq for BuildConfig {
 
 pub trait BuildTool {
     fn id(&self) -> String;
-    fn detect(&self) -> bool;
     fn build(&self) -> bool;
 }
 

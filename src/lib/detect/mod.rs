@@ -1,8 +1,6 @@
 use std::{collections::HashSet, path::PathBuf};
 
-use crate::lib::build_tools::docker::default as DockerDefault;
-use crate::lib::build_tools::gitlab::default as GitLabDefault;
-use crate::lib::build_tools::{BuildConfig, BuildTool, BuildTools};
+use crate::lib::build_tools::{BuildConfig, BuildTools, DEFAULT_BUILD_TOOLS};
 
 /// This function will walk up the directory tree, to the path
 /// the binary was run from; looking for any kind of build file.
@@ -11,13 +9,13 @@ use crate::lib::build_tools::{BuildConfig, BuildTool, BuildTools};
 /// and potentially only, integration.
 pub fn detect_build_roots(root: &PathBuf, changed_dirs: &HashSet<PathBuf>) -> HashSet<BuildTools> {
     let mut build_roots: HashSet<BuildTools> = HashSet::new();
-
     for dir in changed_dirs {
-        log::info!(
+        log::debug!(
             "Walking from {} to {}, looking for a build root ...",
             dir.to_str().unwrap(),
             root.to_str().unwrap(),
         );
+
         match walk_to_build_root(root, &dir) {
             Some(build_tool) => {
                 build_roots.insert(build_tool);
@@ -35,7 +33,7 @@ pub fn detect_build_roots(root: &PathBuf, changed_dirs: &HashSet<PathBuf>) -> Ha
 /// build files
 ///
 fn walk_to_build_root(root: &PathBuf, changed_dir: &PathBuf) -> Option<BuildTools> {
-    log::info!(
+    log::debug!(
         "Checking {}/{} for a build file",
         root.to_str().unwrap(),
         changed_dir.to_str().unwrap()
@@ -46,27 +44,11 @@ fn walk_to_build_root(root: &PathBuf, changed_dir: &PathBuf) -> Option<BuildTool
         dependencies: Vec::new(),
     };
 
-    // Check if it's a Docker root
-    let docker_build = DockerDefault(&build_config);
-    if docker_build.detect() {
-        log::info!(
-            "Found a Dockerfile inside directory {}",
-            build_config.directory.to_str().unwrap()
-        );
-
-        return Some(BuildTools::from(docker_build));
-    }
-
-    // Check if it's a GitLab root
-    let gitlab_build = GitLabDefault(&build_config);
-
-    if gitlab_build.detect() {
-        log::info!(
-            "Found a GitLab CI YAML inside directory {}",
-            build_config.directory.to_str().unwrap()
-        );
-
-        return Some(BuildTools::from(gitlab_build));
+    for detect in DEFAULT_BUILD_TOOLS.iter() {
+        match detect(&build_config) {
+            Some(build_tool) => return Some(build_tool),
+            None => continue,
+        }
     }
 
     if root.eq(changed_dir) {
@@ -84,17 +66,36 @@ fn walk_to_build_root(root: &PathBuf, changed_dir: &PathBuf) -> Option<BuildTool
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::lib::build_tools::docker::DockerBuild;
+    use crate::lib::build_tools::gitlab::GitLabBuild;
 
     #[test]
     fn test_is_can_find_all_build_roots() {
+        let root_dir = PathBuf::from("examples");
+
         let mut changed_dirs: HashSet<PathBuf> = HashSet::new();
-        changed_dirs.insert(PathBuf::from("./examples/dockerfile"));
-        changed_dirs.insert(PathBuf::from("./examples/gitlab-ci"));
-        changed_dirs.insert(PathBuf::from("./examples/makefile"));
+        changed_dirs.insert(PathBuf::from("dockerfile"));
+        changed_dirs.insert(PathBuf::from("gitlab-ci"));
+        changed_dirs.insert(PathBuf::from("makefile"));
 
-        let actual = detect_build_roots(&PathBuf::from("./examples"), &changed_dirs);
+        let actual = detect_build_roots(&root_dir, &changed_dirs);
 
-        let expected: HashSet<BuildTools> = HashSet::new();
+        let mut expected: HashSet<BuildTools> = HashSet::new();
+
+        expected.insert(BuildTools::from(GitLabBuild {
+            config: BuildConfig {
+                directory: PathBuf::from("examples/gitlab-ci"),
+                dependencies: Vec::new(),
+            },
+        }));
+
+        expected.insert(BuildTools::from(DockerBuild {
+            config: BuildConfig {
+                directory: PathBuf::from("examples/dockerfile"),
+                dependencies: Vec::new(),
+            },
+            dockerfile: String::from("Dockerfile"),
+        }));
 
         assert_eq!(actual, expected);
     }

@@ -14,11 +14,23 @@ pub struct DockerBuild {
     pub dockerfile: String,
 }
 
-pub fn default(config: &BuildConfig) -> DockerBuild {
-    return DockerBuild {
-        config: config.clone(),
-        dockerfile: String::from("Dockerfile"),
-    };
+///
+/// Detect if the directory has a Dockerfile
+///
+pub fn detect(config: &BuildConfig) -> Option<BuildTools> {
+    log::debug!(
+        "Checking for '{}'",
+        config.directory.join("Dockerfile").to_str().unwrap()
+    );
+
+    if config.directory.join("Dockerfile").exists() {
+        return Some(BuildTools::from(DockerBuild {
+            config: config.clone(),
+            dockerfile: String::from("Dockerfile"),
+        }));
+    }
+
+    return None;
 }
 
 impl BuildTool for DockerBuild {
@@ -28,20 +40,6 @@ impl BuildTool for DockerBuild {
             self.config.directory.to_str().unwrap(),
             self.dockerfile
         );
-    }
-
-    fn detect(&self) -> bool {
-        // Check if PathBuf has a file called Dockerfile
-        if self
-            .config
-            .directory
-            .join(self.dockerfile.as_str())
-            .exists()
-        {
-            return true;
-        }
-
-        return false;
     }
 
     fn build(&self) -> bool {
