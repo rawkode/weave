@@ -103,11 +103,12 @@ mod tests {
         let repo = Repository::init(td.path()).unwrap();
 
         let mut index = t!(repo.index());
-        let sig = t!(repo.signature());
 
         let mut config = t!(repo.config());
         t!(config.set_str("user.name", "Daniel Jackson"));
         t!(config.set_str("user.email", "daniel.jackson@sg1"));
+
+        let sig = t!(repo.signature());
 
         // This is our initial commit. It addds 1 file within 1 directory
         // This directory shouldn't show up during change analysis of
